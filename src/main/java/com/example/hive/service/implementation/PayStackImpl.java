@@ -1,6 +1,7 @@
 package com.example.hive.service.implementation;
 
 import com.example.hive.client.PayStackClient;
+import com.example.hive.constant.TransactionType;
 import com.example.hive.dto.request.BankTransferDto;
 import com.example.hive.dto.request.PayStackPaymentRequest;
 import com.example.hive.dto.request.PayStackTransferRecepientRequest;
@@ -178,7 +179,7 @@ public class PayStackImpl implements PayStackService {
         } catch (Exception e) {
             throw new CustomException(e.getMessage());}
 
-        walletService.withdrawFromWalletBalance(user, dto.getAmount());
+        walletService.withdrawFromWalletBalance(user, dto.getAmount(), TransactionType.WITHDRAW);
 
         return responseFlux.doOnNext(res -> log.info("res: {}", res))
                     .next();

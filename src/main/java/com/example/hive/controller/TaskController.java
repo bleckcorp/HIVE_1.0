@@ -24,6 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/tasks")
+@CrossOrigin(origins = "*")
 public class TaskController {
 
     private TaskService taskService;

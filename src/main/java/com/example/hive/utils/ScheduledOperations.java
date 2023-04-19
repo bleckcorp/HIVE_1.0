@@ -47,7 +47,7 @@ public class ScheduledOperations {
         });
     }
 
-    @Scheduled(cron = "0 */5 * * * *") // Runs every 5 minutes
+    @Scheduled(cron = "0 * * * * *")// Runs every 1 minute
     public void verifyPendingPaystackTransactions(){
 
         log.info("Verifying pending transactions...");
