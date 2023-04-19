@@ -6,18 +6,22 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.example.hive.constant.SecurityConstants;
 import com.example.hive.exceptions.CustomException;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 
+@Log4j2
 public class JwtService {
+
 
     public static TokenResponse generateToken(Authentication authentication, com.example.hive.entity.User currentUser) {
         User user = (User) authentication.getPrincipal();
@@ -43,7 +47,24 @@ public class JwtService {
                         .collect(Collectors.toList())
                 ).sign(algorithm);
 
-        return new TokenResponse(access_token);
+        String refresh_token = JWT.create()
+                .withSubject(user.getUsername())
+                .withExpiresAt(new Date(System.currentTimeMillis() + 100 * 60 * 1000))
+                .withIssuedAt(new Date(System.currentTimeMillis()))
+                .withClaim("roles", authentication.getAuthorities()
+                        .stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .collect(Collectors.toList())
+                ).sign(algorithm);
+
+        log.info("access_token and refresh_token sent for {}",user.getUsername());
+
+        return new TokenResponse(
+                access_token,
+                refresh_token,
+                new Date(System.currentTimeMillis()).toString(),
+                new Date(System.currentTimeMillis()+ SecurityConstants.EXPIRATION_TIME).toString()
+        );
     }
 
 

@@ -25,7 +25,7 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
     @SneakyThrows
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, CustomException {
-        if (request.getServletPath().equals("/auth/signup") ) {
+        if (request.getServletPath().equals("/auth/signup") || request.getServletPath().equals("/auth/login") ) {
             filterChain.doFilter(request, response);
         } else {
             String authorizationHeader = request.getHeader(AUTHORIZATION);
@@ -35,9 +35,7 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
                     String token = authorizationHeader.substring(SecurityConstants.TOKEN_PREFIX.length());
                     UsernamePasswordAuthenticationToken authenticationToken = JwtService.verifyToken(token);
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    log.info("I have verified {}", authenticationToken.getAuthorities().toString());
                     filterChain.doFilter(request, response);
-                    log.info("I have done filter chain");
                 } catch (Exception exception) {
                     exception.printStackTrace();
                     log.error("Error occurred {}", exception.getMessage());
@@ -47,7 +45,6 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
                 }
 
             } else {
-                log.info("I am in the JWT filter,,");
                 filterChain.doFilter(request, response);
             }
         }

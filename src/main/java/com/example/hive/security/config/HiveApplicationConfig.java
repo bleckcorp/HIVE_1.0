@@ -55,12 +55,12 @@ public class HiveApplicationConfig {
         return new ModelMapper();
     }
 
-    @Bean
-    public LogoutHandler logoutHandler() {
-        return (request, response, authentication) -> {
-
-        };
-    }
+//    @Bean
+//    public LogoutHandler logoutHandler() {
+//        return (request, response, authentication) -> {
+//
+//        };
+//    }
     @Bean
     public LogoutSuccessHandler logoutSuccessHandler() {
         return new LogoutSuccessHandler() {

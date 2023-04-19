@@ -60,6 +60,7 @@ public class AuthController {
             TokenResponse tokenResponse = JwtService.generateToken(authentication, currentUser);
             return ResponseEntity.status(200).body(AppResponse.builder().statusCode("00").isSuccessful(true).result(tokenResponse).message("Authenticated").build());
         } else {
+            log.error("User does not exist");
             throw new UsernameNotFoundException("invalid user request !");
         }
     }
