@@ -1,6 +1,5 @@
 package com.example.hive.service.implementation;
 
-import com.example.hive.constant.TransactionType;
 import com.example.hive.dto.request.TaskDto;
 import com.example.hive.dto.response.AppResponse;
 import com.example.hive.dto.response.TaskResponseDto;
@@ -262,7 +261,7 @@ public class TaskServiceImpl implements TaskService {
         if (!taskToCancel.getStatus().equals(Status.NEW)) throw new BadRequestException("Task is not new");
         if ((taskToCancel.getStatus().equals(Status.NEW)) && isTaskerTheOwnerOfTask(taskToCancel,currentUser)) {
             walletService.refundTaskerFromEscrowWallet(taskToCancel);
-//            refundTasker(taskToCancel);
+            refundTasker(taskToCancel);
             taskToCancel.setStatus(Status.CANCELLED);
             taskRepository.save(taskToCancel);
             return true;
@@ -271,14 +270,14 @@ public class TaskServiceImpl implements TaskService {
     }
 
 
-//    private void refundTasker(Task task) {
-//        User tasker = task.getTasker();
-//        EscrowWallet escrowWallet = task.getEscrowWallet();
-//        walletService.fundTaskerWallet(tasker, escrowWallet.getEscrowAmount(), TransactionType.REFUND);
-//        escrowWallet.setEscrowAmount(new BigDecimal(0));
-//        escrowWalletRepository.save(escrowWallet);
-//
-//    }
+    private void refundTasker(Task task) {
+        User tasker = task.getTasker();
+        EscrowWallet escrowWallet = task.getEscrowWallet();
+        walletService.fundTaskerWallet(tasker, escrowWallet.getEscrowAmount());
+        escrowWallet.setEscrowAmount(new BigDecimal(0));
+        escrowWalletRepository.save(escrowWallet);
+
+    }
 
     private void creditTheDoerWalletFromEscrowWallet(EscrowWallet escrowWallet, User doer, Task task) {
 
@@ -295,9 +294,6 @@ public class TaskServiceImpl implements TaskService {
     }
 
     private boolean isTaskerTheOwnerOfTask(Task task, User tasker) {
-        log.info("owner:  {} and verify this : {}", task.getTasker().getFullName(), tasker.getFullName());
-        boolean ans = task.getTasker().equals(tasker);
-        log.info("ans: {}", ans);
         return task.getTasker().equals(tasker);
     }
 

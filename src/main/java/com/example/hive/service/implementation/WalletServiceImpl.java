@@ -15,7 +15,6 @@ import com.example.hive.repository.WalletRepository;
 import com.example.hive.service.WalletService;
 import com.example.hive.utils.event.SuccessfulCreditEvent;
 import com.example.hive.utils.event.WalletFundingEvent;
-import com.example.hive.dto.response.TransactionLogResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
@@ -26,7 +25,6 @@ import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -81,7 +79,7 @@ public class WalletServiceImpl implements WalletService {
 
 
     @Override
-    public void withdrawFromWalletBalance(User user, BigDecimal amount, TransactionType transactionType) {
+    public void withdrawFromWalletBalance(User user, BigDecimal amount) {
         Wallet wallet = walletRepository.findByUser(user).orElseThrow(() -> new CustomException("User does not have a wallet"));
         if (wallet.getAccountBalance().compareTo(amount) < 0) {
             throw new CustomException("Insufficient funds");
@@ -91,7 +89,7 @@ public class WalletServiceImpl implements WalletService {
         TransactionLog transactionLog = new TransactionLog();
         transactionLog.setAmount(amount);
         transactionLog.setUser(user);
-        transactionLog.setTransactionType(transactionType);
+        transactionLog.setTransactionType(TransactionType.WITHDRAW);
         transactionLog.setTransactionStatus(TransactionStatus.SUCCESS);
         transactionLog.setTransactionDate(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").format(LocalDateTime.now()));
         transactionLogRepository.save(transactionLog);
@@ -106,7 +104,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public boolean fundTaskerWallet(User tasker, BigDecimal amountToFund, TransactionType transactionType) {
+    public boolean fundTaskerWallet(User tasker, BigDecimal amountToFund) {
         log.info("Crediting tasker wallet{}", tasker.getFullName()) ;
         //check role of user
         if (!tasker.getRole().equals(Role.TASKER)) {
@@ -126,7 +124,7 @@ public class WalletServiceImpl implements WalletService {
             TransactionLog transactionLog = new TransactionLog ();
             transactionLog.setAmount(amountToFund);
             transactionLog.setUser(tasker);
-            transactionLog.setTransactionType(transactionType);
+            transactionLog.setTransactionType(TransactionType.DEPOSIT);
             transactionLog.setTransactionStatus(TransactionStatus.SUCCESS);
             transactionLog.setTransactionDate(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").format(LocalDateTime.now()));
 
@@ -147,7 +145,17 @@ public class WalletServiceImpl implements WalletService {
             throw new CustomException("User is not a tasker role");
         }
         else {
-            withdrawFromWalletBalance(wallet.getUser(), amount, TransactionType.ESCROW);
+            //check if user has a wallet
+            Wallet getWallet =  walletRepository.findByUser(wallet.getUser()).orElseThrow(() -> new CustomException("User does not have a wallet"));
+            log.info("I found wallet balance of {}", getWallet.getAccountBalance()) ;
+
+            if (getWallet.getAccountBalance() == null) {throw new CustomException("Insufficient funds");}
+
+            //debit wallet for task creation
+            else { getWallet.setAccountBalance(getWallet.getAccountBalance().subtract(amount));}
+            log.info("NOW I found wallet balance of {}", getWallet.getAccountBalance()) ;
+
+            walletRepository.save(wallet);
             return true;
 
         }
@@ -157,7 +165,7 @@ public class WalletServiceImpl implements WalletService {
     public boolean refundTaskerFromEscrowWallet(Task task) {
         User tasker = task.getTasker();
         EscrowWallet escrowWallet = task.getEscrowWallet();
-       if ( fundTaskerWallet(tasker, escrowWallet.getEscrowAmount(),TransactionType.REFUND)) {
+       if ( fundTaskerWallet(tasker, escrowWallet.getEscrowAmount())){
            escrowWallet.setEscrowAmount(new BigDecimal(0));
            escrowWalletRepository.save(escrowWallet);
            return true;
@@ -166,11 +174,9 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public List<TransactionLogResponse> getWalletHistory(Principal principal) {
+    public List<TransactionResponse> getWalletHistory(Principal principal) {
         User user = userRepository.findByEmail(principal.getName()).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        List<TransactionLog> transactionLogs = transactionLogRepository.findAllByUserAndTransactionStatusOrderByUpdatedDate(user, TransactionStatus.SUCCESS);
-        List<TransactionLogResponse> list= transactionLogs.stream().map(transactionLog -> modelMapper.map(transactionLog, TransactionLogResponse.class)).collect(Collectors.toList());
-        Collections.reverse(list);
-        return list;
+        List<TransactionLog> transactionLogs = transactionLogRepository.findAllByUserAndTransactionStatus(user, TransactionStatus.SUCCESS);
+        return transactionLogs.stream().map(transactionLog -> modelMapper.map(transactionLog, TransactionResponse.class)).collect(Collectors.toList());
     }
 }

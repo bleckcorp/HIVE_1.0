@@ -22,7 +22,7 @@ public class Notification {
 
     private String body;
 
-    private String createdAt;
+    private LocalDateTime createdAt;
 
     @JsonBackReference
     @ManyToOne

@@ -46,7 +46,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .user(tasker)
                 .title("Task Created " + "-> " + task.getJobType())
                 .body("Your task has been successfully created, kindly await an acceptance")
-                .createdAt(LocalDateTime.now().toString())
+                .createdAt(LocalDateTime.now())
                 .build();
         
         Notification savedNotification = notificationRepository.save(notification);
@@ -66,7 +66,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = Notification.builder()
                 .user(doer)
                 .title("Task Acceptance!!!")
-                .createdAt(LocalDateTime.now().toString())
+                .createdAt(LocalDateTime.now())
                 .body("Congratulations! You have successfully accepted a task with the following details: \n"
                         + "Task type: " + task.getJobType() + "\n"
                         + "Task description: " + task.getTaskDescription() + "\n"
@@ -93,7 +93,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = Notification.builder()
                 .user(tasker)
                 .title("Task Accepted!")
-                .createdAt(LocalDateTime.now().toString())
+                .createdAt(LocalDateTime.now())
                 .body("Congratulations! Your task has been successfully accepted by " + task.getDoer().getFullName() + "\n"
                         + "Task Details: \n"
                         + "Task type: " + task.getJobType() + "\n"
@@ -113,7 +113,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = Notification.builder()
                 .user(user)
                 .title("Wallet Funded!")
-                .createdAt(LocalDateTime.now().toString())
+                .createdAt(LocalDateTime.now())
                 .body("Congratulations! Your wallet has been successfully funded with " + amount + "\n"
                         + "Thank you for using Hive!")
                 .build();
@@ -127,18 +127,18 @@ public class NotificationServiceImpl implements NotificationService {
         User user = userRepository.findByEmail(email).orElseThrow(() -> {
             throw new CustomException("User with the email: " + email + " was not found");
         });
-        List<Notification> notifications = notificationRepository.findNotificationsByUserOrderByCreatedAtDesc(user);
+        List<Notification> notifications = notificationRepository.findAllByUserOrderByCreatedAtDesc(user);
         List<NotificationResponseDto> notificationResponseDtos = new ArrayList<>();
 
         for(Notification notification : notifications) {
             NotificationResponseDto notificationResponseDto = new ModelMapper().map(notification, NotificationResponseDto.class);
             notificationResponseDto.setUserId(user.getUser_id().toString());
 
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
-            LocalDateTime datetime = LocalDateTime.parse(notification.getCreatedAt(), formatter);
+//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
+//            LocalDateTime datetime = LocalDateTime.parse(notification.getCreatedAt(), formatter);
 
 
-            notificationResponseDto.setElapsedTime(EpochTime.getElapsedTime(datetime));
+            notificationResponseDto.setElapsedTime(EpochTime.getElapsedTime(notification.getCreatedAt()));
             notificationResponseDtos.add(notificationResponseDto);
         }
         return notificationResponseDtos;
@@ -148,7 +148,7 @@ public class NotificationServiceImpl implements NotificationService {
         return NotificationResponseDto.builder()
                 .title(notification.getTitle())
                 .body(notification.getBody())
-                .createdAt(notification.getCreatedAt())
+                .createdAt(notification.getCreatedAt().toString())
                 .build();
     }
 }

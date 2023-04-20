@@ -41,7 +41,7 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
                     log.error("Error occurred {}", exception.getMessage());
                     response.setHeader("error", exception.getMessage());
                     response.setContentType(APPLICATION_JSON_VALUE);
-                    throw new CustomException(exception.getMessage());
+                    throw   new CustomException(exception.getMessage());
                 }
 
             } else {

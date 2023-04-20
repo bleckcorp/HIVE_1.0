@@ -76,18 +76,9 @@ public class TransactionController {
                                                    @RequestParam(name = "provider", defaultValue = DEFAULT_PROVIDER) String provider,
                                                    Principal principal) throws InterruptedException {
         User user = userRepository.findByEmail(principal.getName()).orElseThrow(() -> new IllegalArgumentException("User not found"));
-       if (!isAccountBalanceEnough(dto.getAmount(),user)) throw new InsufficientBalanceException("Insufficient funds");
-       return payStackServic.transferFunds(dto, provider, user);
 
-//       if (response == null) {
-//           return ResponseEntity.ok(AppResponse.builder()
-//                   .message("Withdrawal failed, Check your Input and try again")
-//                   .result(null)
-//                   .isSuccessful(false)
-//                   .build()
-//                   );
-//       }
-//        return ResponseEntity.ok(AppResponse.buildSuccessTxn(response));
+       if (!isAccountBalanceEnough(dto.getAmount(),user)) throw new InsufficientBalanceException("Insufficient funds");
+        return payStackServic.transferFunds(dto, provider, user);
     }
 
     private boolean isAccountBalanceEnough(BigDecimal amount, User user) {
@@ -104,8 +95,8 @@ public class TransactionController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<AppResponse<List<TransactionLogResponse>>> getTransactionHistory(Principal principal)  {
-        List<TransactionLogResponse> response = walletService.getWalletHistory(principal);
+    public ResponseEntity<AppResponse<List<TransactionResponse>>> getTransactionHistory(Principal principal)  {
+        List<TransactionResponse> response = walletService.getWalletHistory(principal);
         return ResponseEntity.ok(AppResponse.buildSuccessTxn(response));
     }
 

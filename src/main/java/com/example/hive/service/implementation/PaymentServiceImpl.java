@@ -1,7 +1,6 @@
 package com.example.hive.service.implementation;
 
 import com.example.hive.constant.TransactionStatus;
-import com.example.hive.constant.TransactionType;
 import com.example.hive.dto.request.PayStackPaymentRequest;
 import com.example.hive.dto.request.FundWalletRequest;
 import com.example.hive.dto.response.PayStackResponse;
@@ -107,7 +106,7 @@ public class PaymentServiceImpl implements PaymentService {
             paymentLog.setTransactionStatus(TransactionStatus.SUCCESS);
             paymentLogRepository.save(paymentLog);
 
-            walletService.fundTaskerWallet(tasker, amountToFund, TransactionType.DEPOSIT);
+            walletService.fundTaskerWallet(tasker, amountToFund);
         } else {
             throw new CustomException("Transaction failed");
         }
@@ -153,7 +152,7 @@ public class PaymentServiceImpl implements PaymentService {
             paymentLog.setTransactionStatus(TransactionStatus.SUCCESS);
             paymentLogRepository.save(paymentLog);
 
-            walletService.fundTaskerWallet(paymentLog.getTaskerDepositor(), amountToFund,TransactionType.DEPOSIT);
+            walletService.fundTaskerWallet(paymentLog.getTaskerDepositor(), amountToFund);
         } else {
             throw new CustomException("Transaction failed");
         }
