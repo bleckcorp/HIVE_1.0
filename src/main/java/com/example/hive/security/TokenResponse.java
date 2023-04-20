@@ -10,7 +10,9 @@ import lombok.Data;
 public class TokenResponse {
 
     private String token;
-    private String refreshToken;
-    private String issuedDate;
-    private String expirationDate;
+
+    @Override
+    public String toString() {
+        return token;
+    }
 }

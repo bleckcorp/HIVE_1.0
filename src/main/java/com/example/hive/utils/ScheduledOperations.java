@@ -47,7 +47,7 @@ public class ScheduledOperations {
         });
     }
 
-    @Scheduled(cron = "0 */5 * * * *") // Runs every 5 minutes
+    @Scheduled(cron = "0 * * * * *")// Runs every 1 minute
     public void verifyPendingPaystackTransactions(){
 
         log.info("Verifying pending transactions...");
@@ -55,13 +55,13 @@ public class ScheduledOperations {
         // get all pending payment logs
         List<PaymentLog> pendingPaymentLogs = paymentLogRepository.findAllByTransactionStatus(TransactionStatus.PENDING);
         pendingPaymentLogs.forEach(paymentLog -> {
-            //verify status
-            try {
-                paymentService.verifyAndCompletePayment(paymentLog.getTransactionReference());
-            } catch (Exception e) {
-                log.info("Transaction verification failed for transaction reference: " + paymentLog.getTransactionReference());
-            }
-        }
+                    //verify status
+                    try {
+                        paymentService.verifyAndCompletePayment(paymentLog.getTransactionReference());
+                    } catch (Exception e) {
+                        log.info("Transaction verification failed for transaction reference: " + paymentLog.getTransactionReference());
+                    }
+                }
         );
     }
 }

@@ -1,6 +1,7 @@
 package com.example.hive.service.implementation;
 
 import com.example.hive.constant.TransactionStatus;
+import com.example.hive.constant.TransactionType;
 import com.example.hive.dto.request.PayStackPaymentRequest;
 import com.example.hive.dto.request.FundWalletRequest;
 import com.example.hive.dto.response.PayStackResponse;
@@ -49,15 +50,15 @@ public class PaymentServiceImpl implements PaymentService {
 
 
         var payStackPaymentRequest = PayStackPaymentRequest.builder()
-                    .amount(taskerPaymentRequest.getAmount())
-                    .email(user.getEmail())
-                    .build();
+                .amount(taskerPaymentRequest.getAmount())
+                .email(user.getEmail())
+                .build();
 
-           PayStackResponse payStackResponse = payStackService.initTransaction(principal, payStackPaymentRequest);
+        PayStackResponse payStackResponse = payStackService.initTransaction(principal, payStackPaymentRequest);
 
-           // save to trasanction log to save the details of the payment
-           saveToPaymentLog(payStackResponse, user, taskerPaymentRequest);
-           return payStackResponse;
+        // save to trasanction log to save the details of the payment
+        saveToPaymentLog(payStackResponse, user, taskerPaymentRequest);
+        return payStackResponse;
 
     }
 
@@ -87,7 +88,7 @@ public class PaymentServiceImpl implements PaymentService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-     log.info("Verified transaction response {}", verifyTransactionResponse.getData().getAmount());
+        log.info("Verified transaction response {}", verifyTransactionResponse.getData().getAmount());
 
         var status = verifyTransactionResponse.getData().getStatus();
         var amountPaid = BigDecimal.valueOf(verifyTransactionResponse.getData().getAmount());
@@ -95,7 +96,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         if (status.equals("failed")){
             paymentLog.setTransactionStatus(TransactionStatus.FAILED);
-        return verifyTransactionResponse;
+            return verifyTransactionResponse;
         }
 
 
@@ -106,7 +107,7 @@ public class PaymentServiceImpl implements PaymentService {
             paymentLog.setTransactionStatus(TransactionStatus.SUCCESS);
             paymentLogRepository.save(paymentLog);
 
-            walletService.fundTaskerWallet(tasker, amountToFund);
+            walletService.fundTaskerWallet(tasker, amountToFund, TransactionType.DEPOSIT);
         } else {
             throw new CustomException("Transaction failed");
         }
@@ -152,7 +153,7 @@ public class PaymentServiceImpl implements PaymentService {
             paymentLog.setTransactionStatus(TransactionStatus.SUCCESS);
             paymentLogRepository.save(paymentLog);
 
-            walletService.fundTaskerWallet(paymentLog.getTaskerDepositor(), amountToFund);
+            walletService.fundTaskerWallet(paymentLog.getTaskerDepositor(), amountToFund,TransactionType.DEPOSIT);
         } else {
             throw new CustomException("Transaction failed");
         }

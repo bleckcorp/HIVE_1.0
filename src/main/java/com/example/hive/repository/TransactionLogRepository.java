@@ -12,5 +12,5 @@ import java.util.UUID;
 
 @Repository
 public interface TransactionLogRepository extends JpaRepository<TransactionLog, String> {
-    List<TransactionLog> findAllByUserAndTransactionStatus(User user, TransactionStatus transactionStatus);
+    List<TransactionLog> findAllByUserAndTransactionStatusOrderByUpdatedDate(User user, TransactionStatus transactionStatus);
 }

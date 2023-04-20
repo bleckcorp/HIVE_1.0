@@ -21,8 +21,10 @@ import org.springframework.security.web.authentication.logout.LogoutSuccessHandl
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class HiveSecurityConfig {
-
+    private final LogoutHandler logoutHandler;
+    private final LogoutSuccessHandler logoutSuccessHandler;
     private final JwtAuthTokenFilter authenticationFilter;
+    private final PasswordEncoder passwordEncoder;
     private final AuthenticationProvider authenticationProvider;
 
 
@@ -31,7 +33,7 @@ public class HiveSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
 
-//when X-frame option is disabled it increases the risk of clickjacking
+        //when X-frame option is disabled it increases the risk of clickjacking
         return http.headers().frameOptions().disable().and()
                 .csrf().disable()
                 .authorizeHttpRequests()
@@ -44,68 +46,31 @@ public class HiveSecurityConfig {
                         "/actuator/**",
                         "/swagger-resources/**",
                         "/swagger-ui.html",
-                        "/webjars/**"
+                        "/api/v1/user/**",
+                        "/transaction/**",
+                        "/tasks/search?text=book",
+                        "/tasks/search",
+                        "/tasks/**",//debugging
+                        "/webjars/**",
+                        "/api/notifications/**"
                 ).permitAll()
-                .anyRequest()
-                .authenticated()
                 .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .logout()
+                .logoutUrl("/logout")
+                .clearAuthentication(true)
+                .addLogoutHandler(logoutHandler)
+                .logoutSuccessHandler(((request, response, authentication) ->
+                        SecurityContextHolder.clearContext()))
+                .invalidateHttpSession(true)
+                .deleteCookies("JESSIONID")
+                .logoutSuccessUrl("/login")
+                .and()
                 .build();
     }
-//    private final LogoutHandler logoutHandler;
-//    private final LogoutSuccessHandler logoutSuccessHandler;
-//    private final JwtAuthTokenFilter authenticationFilter;
-//    private final PasswordEncoder passwordEncoder;
-//    private final AuthenticationProvider authenticationProvider;
-//
-//    //Authorization
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-
-
-        //when X-frame option is disabled it increases the risk of clickjacking
-//        return http.headers().frameOptions().disable().and()
-//                .csrf().disable()
-//                .authorizeHttpRequests()
-//                .requestMatchers(
-//                        "/auth/**",
-//                        "/login",
-//                        "/h2-console/**",
-//                        "/v3/api-docs/**",
-//                        "/swagger-ui/**",
-//                        "/actuator/**",
-//                        "/swagger-resources/**",
-//                        "/api/v1/user/**",
-//                        "/transaction/**",
-//                        "/tasks/search?text=book",
-//                        "/tasks/search",
-//                        "/tasks/**",//debugging
-//                        "/swagger-ui.html",
-//                        "/webjars/**",
-//                        "/api/notifications/**"
-//                ).permitAll()
-//                .and()
-//                .sessionManagement()
-//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-//                .and()
-//                .authenticationProvider(authenticationProvider)
-//                .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
-//                .logout()
-//                .logoutUrl("/logout")
-//                .clearAuthentication(true)
-//                .addLogoutHandler(logoutHandler)
-//                .logoutSuccessHandler(((request, response, authentication) ->
-//                        SecurityContextHolder.clearContext()))
-//                .invalidateHttpSession(true)
-//                .deleteCookies("JESSIONID")
-//                .logoutSuccessUrl("/login")
-//                .and()
-//                .build();
-//    }
 
 }

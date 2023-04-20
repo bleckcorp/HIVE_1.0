@@ -95,8 +95,8 @@ public class TransactionController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<AppResponse<List<TransactionResponse>>> getTransactionHistory(Principal principal)  {
-        List<TransactionResponse> response = walletService.getWalletHistory(principal);
+    public ResponseEntity<AppResponse<List<TransactionLogResponse>>> getTransactionHistory(Principal principal)  {
+        List<TransactionLogResponse> response = walletService.getWalletHistory(principal);
         return ResponseEntity.ok(AppResponse.buildSuccessTxn(response));
     }
 
