@@ -3,6 +3,7 @@ package com.example.hive.service.implementation;
 import com.example.hive.dto.response.NotificationResponseDto;
 import com.example.hive.entity.Notification;
 import com.example.hive.entity.Task;
+import com.example.hive.entity.TransactionLog;
 import com.example.hive.entity.User;
 import com.example.hive.enums.Role;
 import com.example.hive.exceptions.CustomException;
@@ -38,17 +39,17 @@ public class NotificationServiceImpl implements NotificationService {
         {
             throw new CustomException("User not found");
         });
-        if(!tasker.getRole().equals(Role.TASKER)) {
+        if (!tasker.getRole().equals(Role.TASKER)) {
             throw new CustomException("User is not a Tasker");
         }
 
         Notification notification = Notification.builder()
                 .user(tasker)
-                .title("Task Created " + "-> " + task.getJobType())
+                .title(task.getJobType())
                 .body("Your task has been successfully created, kindly await an acceptance")
                 .createdAt(LocalDateTime.now())
                 .build();
-        
+
         Notification savedNotification = notificationRepository.save(notification);
         return mapToNotificationResponse(savedNotification);
     }
@@ -60,7 +61,7 @@ public class NotificationServiceImpl implements NotificationService {
         {
             throw new CustomException("User not found");
         });
-        if(!doer.getRole().equals(Role.DOER)) {
+        if (!doer.getRole().equals(Role.DOER)) {
             throw new CustomException("User is not a Doer");
         }
         Notification notification = Notification.builder()
@@ -87,7 +88,7 @@ public class NotificationServiceImpl implements NotificationService {
         {
             throw new CustomException("User not found");
         });
-        if(!tasker.getRole().equals(Role.DOER)) {
+        if (!tasker.getRole().equals(Role.DOER)) {
             throw new CustomException("User is not a Doer");
         }
         Notification notification = Notification.builder()
@@ -106,49 +107,119 @@ public class NotificationServiceImpl implements NotificationService {
         return mapToNotificationResponse(savedNotification);
     }
 
+    @Override
+    public void walletActivityNotification(User user, TransactionLog transactionLog) {
+        log.info("Sending Wallet Activity Notification to user  {} ", user.getFullName());
 
-    public NotificationResponseDto walletFundingNotification(User user, BigDecimal amount) {
-        log.info("Sending Wallet Funding Notification to user  {} ", user.getFullName());
+        switch (transactionLog.getTransactionType()) {
+            case DEPOSIT -> {
 
-        Notification notification = Notification.builder()
-                .user(user)
-                .title("Wallet Funded!")
-                .createdAt(LocalDateTime.now())
-                .body("Congratulations! Your wallet has been successfully funded with " + amount + "\n"
-                        + "Thank you for using Hive!")
-                .build();
-
-        Notification savedNotification = notificationRepository.save(notification);
-        return mapToNotificationResponse(savedNotification);
+                String title = "Wallet Deposit!";
+                String body = "Your wallet has been credited with " + transactionLog.getAmount() + "\n"
+                        + "Thank you for using Hive!";
+                makeNotification(user, title, body);
+            }
+            case WITHDRAW -> {
+                String title = "Wallet Debit!";
+                String body = "Your wallet has been debited with " + transactionLog.getAmount() + "\n"
+                        + "Thank you for using Hive!";
+                makeNotification(user, title, body);
+            }
+            case ESCROW -> {
+                String title = "Escrow Transfer!";
+                String body = "Your wallet has been debited with " + transactionLog.getAmount() + "\n"
+                        + "Thank you for using Hive!";
+                makeNotification(user, title, body);
+            }
+            case REFUND -> {
+                String title = "Escrow Refund!";
+                String body = "Your wallet has been credited with " + transactionLog.getAmount() + "\n"
+                        + "Thank you for using Hive!";
+                makeNotification(user, title, body);
+            }
+            default -> throw new CustomException("Transaction Type not found");
+        }
     }
 
     @Override
-    public List<NotificationResponseDto> getAllNotificationOfUser(String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> {
-            throw new CustomException("User with the email: " + email + " was not found");
-        });
-        List<Notification> notifications = notificationRepository.findAllByUserOrderByCreatedAtDesc(user);
-        List<NotificationResponseDto> notificationResponseDtos = new ArrayList<>();
+    public void taskCompletionNotification(Task task, User user) {
 
-        for(Notification notification : notifications) {
-            NotificationResponseDto notificationResponseDto = new ModelMapper().map(notification, NotificationResponseDto.class);
-            notificationResponseDto.setUserId(user.getUser_id().toString());
+        //make notification to tasker
+        String title = "Task Completed!";
+        String body = "Your task with type: " + task.getJobType() + " has been successfully completed by " + task.getDoer().getFullName()
+                       + "\n" + "Kindly Approve!  \n";
+        makeNotification(task.getTasker(), title, body);
+
+        //make notification to doer
+        String body2 = "Your task with type: " + task.getJobType() + "has been successfully completed. Kindly wait for the tasker to approve your work";
+        makeNotification(task.getDoer(), title, body2);
+
+    }
+        @Override
+        public void taskerApprovalNotification (Task task, User user){
+            //make notification to tasker
+            String title = "Task Approved!";
+            String body = "The task with type: " + task.getJobType() + " has been successfully approved,thank you for using Hive!";
+            makeNotification(task.getTasker(), title, body);
+            //make notification to doer
+            makeNotification(task.getDoer(), title, body);
+        }
+
+
+        public NotificationResponseDto walletFundingNotification (User user, BigDecimal amount){
+            log.info("Sending Wallet Funding Notification to user  {} ", user.getFullName());
+
+            Notification notification = Notification.builder()
+                    .user(user)
+                    .title("Wallet Funded!")
+                    .createdAt(LocalDateTime.now())
+                    .body("Congratulations! Your wallet has been successfully funded with " + amount + "\n"
+                            + "Thank you for using Hive!")
+                    .build();
+
+            Notification savedNotification = notificationRepository.save(notification);
+            return mapToNotificationResponse(savedNotification);
+        }
+
+        @Override
+        public List<NotificationResponseDto> getAllNotificationOfUser (String email){
+            User user = userRepository.findByEmail(email).orElseThrow(() -> {
+                throw new CustomException("User with the email: " + email + " was not found");
+            });
+            List<Notification> notifications = notificationRepository.findAllByUserOrderByCreatedAtDesc(user);
+            List<NotificationResponseDto> notificationResponseDtos = new ArrayList<>();
+
+            for (Notification notification : notifications) {
+                NotificationResponseDto notificationResponseDto = new ModelMapper().map(notification, NotificationResponseDto.class);
+                notificationResponseDto.setUserId(user.getUser_id().toString());
 
 //            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
 //            LocalDateTime datetime = LocalDateTime.parse(notification.getCreatedAt(), formatter);
 
 
-            notificationResponseDto.setElapsedTime(EpochTime.getElapsedTime(notification.getCreatedAt()));
-            notificationResponseDtos.add(notificationResponseDto);
+                notificationResponseDto.setElapsedTime(EpochTime.getElapsedTime(notification.getCreatedAt()));
+                notificationResponseDtos.add(notificationResponseDto);
+            }
+            return notificationResponseDtos;
         }
-        return notificationResponseDtos;
-    }
 
-    private NotificationResponseDto mapToNotificationResponse(Notification notification) {
-        return NotificationResponseDto.builder()
-                .title(notification.getTitle())
-                .body(notification.getBody())
-                .createdAt(notification.getCreatedAt().toString())
-                .build();
+
+        private NotificationResponseDto mapToNotificationResponse (Notification notification){
+            return NotificationResponseDto.builder()
+                    .title(notification.getTitle())
+                    .body(notification.getBody())
+                    .createdAt(notification.getCreatedAt().toString())
+                    .build();
+        }
+
+
+        private void makeNotification (User user, String title, String body){
+            notificationRepository.save(Notification.builder()
+                    .user(user)
+                    .title(title)
+                    .createdAt(LocalDateTime.now())
+                    .body(body)
+                    .build());
+        }
+
     }
-}

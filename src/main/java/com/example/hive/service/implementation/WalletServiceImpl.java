@@ -12,6 +12,7 @@ import com.example.hive.repository.EscrowWalletRepository;
 import com.example.hive.repository.TransactionLogRepository;
 import com.example.hive.repository.UserRepository;
 import com.example.hive.repository.WalletRepository;
+import com.example.hive.service.NotificationService;
 import com.example.hive.service.WalletService;
 import com.example.hive.utils.event.SuccessfulCreditEvent;
 import com.example.hive.utils.event.WalletFundingEvent;
@@ -38,6 +39,8 @@ public class WalletServiceImpl implements WalletService {
     private final WalletRepository walletRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+
+    private final NotificationService notificationService;
 
     private final EscrowWalletRepository escrowWalletRepository;
 
@@ -73,6 +76,8 @@ public class WalletServiceImpl implements WalletService {
             eventPublisher.publishEvent(new SuccessfulCreditEvent(doer, transactionLog));
             eventPublisher.publishEvent(new WalletFundingEvent(this, doer, creditAmount));
 
+            notificationService.walletActivityNotification(doer, transactionLog);
+
             return true;
 
         }
@@ -94,6 +99,8 @@ public class WalletServiceImpl implements WalletService {
         transactionLog.setTransactionType(transactionType);
         transactionLog.setTransactionStatus(TransactionStatus.SUCCESS);
         transactionLog.setTransactionDate(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").format(LocalDateTime.now()));
+
+        notificationService.walletActivityNotification(user, transactionLog);
         transactionLogRepository.save(transactionLog);
     }
     @Override
@@ -134,6 +141,7 @@ public class WalletServiceImpl implements WalletService {
             walletRepository.save(wallet);
             eventPublisher.publishEvent(new SuccessfulCreditEvent(tasker, transactionLog));
             eventPublisher.publishEvent(new WalletFundingEvent(this, tasker, amountToFund));
+            notificationService.walletActivityNotification(tasker, transactionLog);
             return true;
 
         }

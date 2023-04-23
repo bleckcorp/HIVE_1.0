@@ -11,6 +11,7 @@ import com.example.hive.exceptions.BadRequestException;
 import com.example.hive.exceptions.CustomException;
 import com.example.hive.exceptions.ResourceNotFoundException;
 import com.example.hive.repository.*;
+import com.example.hive.service.NotificationService;
 import com.example.hive.service.TaskService;
 import com.example.hive.utils.event.TaskAcceptedEvent;
 import com.example.hive.utils.event.listeners.TaskCreatedEvent;
@@ -44,6 +45,8 @@ public class TaskServiceImpl implements TaskService {
     private final ModelMapper modelMapper;
     private final WalletService walletService;
     private final ApplicationEventPublisher eventPublisher;
+
+    private final NotificationService notificationService;
 
 
 
@@ -199,6 +202,8 @@ public class TaskServiceImpl implements TaskService {
             tasKToUpdate.setStatus(Status.ONGOING);
             Task updatedTask = taskRepository.save(tasKToUpdate);
             eventPublisher.publishEvent(new TaskAcceptedEvent(user, updatedTask));
+            notificationService.doerAcceptanceNotification(updatedTask,user);
+            notificationService.taskAcceptanceNotification(updatedTask,updatedTask.getTasker());
             return modelMapper.map(updatedTask, TaskResponseDto.class);
         }
 
@@ -213,6 +218,7 @@ public class TaskServiceImpl implements TaskService {
         if (isTaskOngoing(tasKToUpdate) && isDoerTheSameAsInTheTask(tasKToUpdate,doer)) {
             tasKToUpdate.setStatus(Status.PENDING_APPROVAL);
             Task updatedTask = taskRepository.save(tasKToUpdate);
+            notificationService.taskCompletionNotification(updatedTask,doer);
             return modelMapper.map(updatedTask, TaskResponseDto.class);
         }
         throw new BadRequestException("Something Went wrong");
@@ -237,6 +243,7 @@ public class TaskServiceImpl implements TaskService {
             tasKToUpdate.setIsEscrowTransferComplete(true);
 
             Task updatedTask = taskRepository.save(tasKToUpdate);
+            notificationService.taskerApprovalNotification(tasKToUpdate,tasker);
             return modelMapper.map(updatedTask, TaskResponseDto.class);
         }
         throw new BadRequestException("Something Went wrong");

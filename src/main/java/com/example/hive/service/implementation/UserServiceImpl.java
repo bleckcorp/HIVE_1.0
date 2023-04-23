@@ -111,6 +111,7 @@ public class UserServiceImpl implements UserService {
         // check if token is valid
         if (verificationToken.getExpirationTime().getTime() - cal.getTime().getTime() > 0 ) {
             user.setIsVerified(true);
+            log.info("i have verifed token {}", verificationToken);
             userRepository.save(user);
             // activate the wallet
             activateWallet(user);
@@ -168,6 +169,6 @@ public class UserServiceImpl implements UserService {
     }
 
     private static String getVerificationUrl(HttpServletRequest request) {
-        return "http://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath() + "/auth";
+        return "http://" + request.getServerName() + ":" + "3000" + request.getContextPath();
     }
 }

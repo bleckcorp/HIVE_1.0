@@ -93,7 +93,7 @@ public class AuthController {
 
     @GetMapping("/verifyRegistration")
     public ResponseEntity<AppResponse<Object>> validateRegistrationToken(@RequestParam String token){
-        log.info("controller register: validateRegistrationToken :: [{}] ::", token);
+        log.info("controller register: validateRegistrationToken {}", token);
 
         token = token.replace("[", "").replace("]","");
         boolean isValid = userService.validateRegistrationToken(token);
