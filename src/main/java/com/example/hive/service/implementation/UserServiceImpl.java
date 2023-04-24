@@ -169,6 +169,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private static String getVerificationUrl(HttpServletRequest request) {
-        return "http://" + request.getServerName() + ":" + "3000" + request.getContextPath();
+//        return "http://" + request.getServerName() + ":" + "3000" + request.getContextPath();
+          return "http://hiveproject.netlify.app";
     }
 }

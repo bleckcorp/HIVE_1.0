@@ -9,7 +9,9 @@ import com.example.hive.enums.Role;
 import com.example.hive.exceptions.CustomException;
 import com.example.hive.repository.NotificationRepository;
 import com.example.hive.repository.UserRepository;
+import com.example.hive.service.EmailService;
 import com.example.hive.service.NotificationService;
+import com.example.hive.utils.EmailTemplates;
 import com.example.hive.utils.EpochTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -17,6 +19,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,6 +34,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
+    private final EmailService emailService;
 
     public NotificationResponseDto taskCreationNotification(Task task, User user) {
         log.info("Sending Notification for task creation {}", user.getEmail());
@@ -108,7 +112,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void walletActivityNotification(User user, TransactionLog transactionLog) {
+    public void walletActivityNotification(User user, TransactionLog transactionLog) throws IOException {
         log.info("Sending Wallet Activity Notification to user  {} ", user.getFullName());
 
         switch (transactionLog.getTransactionType()) {
@@ -117,52 +121,52 @@ public class NotificationServiceImpl implements NotificationService {
                 String title = "Wallet Deposit!";
                 String body = "Your wallet has been credited with " + transactionLog.getAmount() + "\n"
                         + "Thank you for using Hive!";
-                makeNotification(user, title, body);
+                makeNotificationToSystemAndEmail(user, title, body);
             }
             case WITHDRAW -> {
                 String title = "Wallet Debit!";
                 String body = "Your wallet has been debited with " + transactionLog.getAmount() + "\n"
                         + "Thank you for using Hive!";
-                makeNotification(user, title, body);
+                makeNotificationToSystemAndEmail(user, title, body);
             }
             case ESCROW -> {
                 String title = "Escrow Transfer!";
                 String body = "Your wallet has been debited with " + transactionLog.getAmount() + "\n"
                         + "Thank you for using Hive!";
-                makeNotification(user, title, body);
+                makeNotificationToSystemAndEmail(user, title, body);
             }
             case REFUND -> {
                 String title = "Escrow Refund!";
                 String body = "Your wallet has been credited with " + transactionLog.getAmount() + "\n"
                         + "Thank you for using Hive!";
-                makeNotification(user, title, body);
+                makeNotificationToSystemAndEmail(user, title, body);
             }
             default -> throw new CustomException("Transaction Type not found");
         }
     }
 
     @Override
-    public void taskCompletionNotification(Task task, User user) {
+    public void taskCompletionNotification(Task task, User user) throws IOException {
 
         //make notification to tasker
         String title = "Task Completed!";
         String body = "Your task with type: " + task.getJobType() + " has been successfully completed by " + task.getDoer().getFullName()
                        + "\n" + "Kindly Approve!  \n";
-        makeNotification(task.getTasker(), title, body);
+        makeNotificationToSystemAndEmail(task.getTasker(), title, body);
 
         //make notification to doer
         String body2 = "Your task with type: " + task.getJobType() + "has been successfully completed. Kindly wait for the tasker to approve your work";
-        makeNotification(task.getDoer(), title, body2);
+        makeNotificationToSystemAndEmail(task.getDoer(), title, body2);
 
     }
         @Override
-        public void taskerApprovalNotification (Task task, User user){
+        public void taskerApprovalNotification (Task task, User user) throws IOException {
             //make notification to tasker
             String title = "Task Approved!";
             String body = "The task with type: " + task.getJobType() + " has been successfully approved,thank you for using Hive!";
-            makeNotification(task.getTasker(), title, body);
+            makeNotificationToSystemAndEmail(task.getTasker(), title, body);
             //make notification to doer
-            makeNotification(task.getDoer(), title, body);
+            makeNotificationToSystemAndEmail(task.getDoer(), title, body);
         }
 
 
@@ -213,13 +217,14 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
 
-        private void makeNotification (User user, String title, String body){
+        private void makeNotificationToSystemAndEmail (User user, String title, String body) throws IOException {
             notificationRepository.save(Notification.builder()
                     .user(user)
                     .title(title)
                     .createdAt(LocalDateTime.now())
                     .body(body)
                     .build());
+            emailService.sendEmail(EmailTemplates.notificationActivityEmail(user, title, body));
         }
 
     }

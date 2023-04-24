@@ -80,6 +80,25 @@ public class EmailTemplates {
                 .build();
     }
 
+    public static EmailDto notificationActivityEmail(User recipient, String subject, String body) {
+
+        String mailContent = "<p> Dear " + recipient.getFullName() + ", </p>";
+        mailContent += "<p> " + body + "</p>";
+//        mailContent += "<ul>";
+//        mailContent += "<li>Job Type: " + task.getJobType() + "</li>";
+//        mailContent += "<li>Task Description: " + task.getTaskDescription() + "</li>";
+//        mailContent += "</ul>";
+//        mailContent += "<p>Thank you <br/> Hive team </p>";
+
+        log.info("Task notification for {} has been sent", recipient.getEmail());
+        return EmailDto.builder()
+                .sender(senderCredential)
+                .subject(subject)
+                .body(mailContent)
+                .recipient(recipient.getEmail())
+                .build();
+    }
+
     public static EmailDto createSuccessfulCreditEmail(User doer, String taskTitle) {
 
             String mailContent = "<p> Dear \"" + doer.getFullName() +  "\", your wallet was successfully credited for the task with description: \n \"" + taskTitle + "</p>";

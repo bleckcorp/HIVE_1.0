@@ -41,7 +41,7 @@ public class PasswordServiceImpl implements PasswordService {
     public String passwordResetTokenMail(User user, String applicationUrl, String token) {
 //        String url = applicationUrl + "/savePassword?token=" + token;
 
-        String url = "http://localhost:3000/reset-password/" + token;
+        String url = "http://hiveproject.netlify.app/reset-password/" + token;
 
         log.info("Click the link to reset your password: {}", url);
 
